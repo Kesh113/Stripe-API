@@ -1,10 +1,28 @@
 from django.contrib import admin
-from .models import Item
+from .models import Item, Order, Discount, Tax
 
 @admin.register(Item)
 class AdminItem(admin.ModelAdmin):
-    list_display = ['id', 'name', 'price']
+    list_display = ['id', 'name', 'price', 'currency']
     list_display_links = ['name']
     list_per_page = 10
-    list_filter = ['name', 'price']
+    list_filter = ['name', 'price', 'currency']
+    
 
+@admin.register(Order)
+class AdminOrder(admin.ModelAdmin):
+    fields = ['user', 'items', 'discount', 'tax']
+    list_display = ['id', 'user', 'discount', 'tax']
+    list_display_links = ['id', 'user']
+    list_per_page = 10
+    list_filter = ['user']
+    
+@admin.register(Discount)
+class AdminDiscount(admin.ModelAdmin):
+    list_display = ['id','name', 'discount', 'duration']
+    list_display_links = ['id','name', 'discount', 'duration']
+    
+@admin.register(Tax)
+class AdminTax(admin.ModelAdmin):
+    list_display = ['id', 'tax']
+    list_display_links = ['id', 'tax']

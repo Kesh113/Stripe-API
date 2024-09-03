@@ -3,51 +3,24 @@
 
 <head>
     <title>{{ item.name }}</title>
-    <script src="https://js.stripe.com/v3/"></script>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
     <section>
-        <h1>{{ item.name }}</h1>
-        <p>Цена: {{ item.price }}</p>
-        <p>Описание: {{ item.description }}</p>
-        <button type="button" id="checkout-button">Buy</button>
+        <form method="post">
+            {% csrf_token %}
+            <h1>{{ item.name }}</h1>
+            <p>Цена: {{ item.price }} {{ item.currency }}</p>
+            <p>Описание: {{ item.description }}</p>
+            <button type="submit" name="item" value="{{ item.id }}">Добавить в корзину</button>
+        </form>
+        <br>
+        <form action="{% url 'payment:index' %}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Вернуться в каталог товаров">
+        </form>
     </section>
-    {% csrf_token %}
 </body>
-
-<script type="text/javascript">
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    // Передача объекту Stripe публичного ключа
-    var stripe = Stripe("{{ publish_key }}");
-    var checkoutButton = document.getElementById("checkout-button");
-    checkoutButton.addEventListener("click", function () {
-        fetch("{% url 'payment:buy' item.id %}", {
-            method: "POST",
-            headers: {
-                'X-CSRFToken': csrftoken
-            }
-        })
-            .then(function (response) {
-                return response.json();
-            })
-            // Редирект на Stripe форму
-            .then(function (session) {
-                return stripe.redirectToCheckout({ sessionId: session.id }); 
-            })
-            .then(function (result) {
-                // Обработка ошибки если не удается выполнить переадресацию
-                if (result.error) {
-                    alert(result.error.message);
-                }
-            })
-            .catch(function (error) {
-                console.error("Ошибка при перенаправлении на страницу оплаты:", error);
-            });
-    });
-</script>
-
 </html>
