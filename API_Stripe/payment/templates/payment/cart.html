@@ -8,24 +8,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h2>{{ user_cart }}</h2>
+    <h1>{{ user_cart }}</h1>
     <ul>
         {% for item in user_items %}
         <li>
             <a href="http://127.0.0.1:8000/item/{{ item.id }}">
-                {{ item }}
+                {{ item.0 }}
             </a>
-            <span>Цена: {{ item.price }} {{ item.currency }}</span>
+            <span>, Цена: {{ item.0.price }} {{ item.0.currency }}, Количество: {{ item.1 }}</span>
         </li>
         <br>
         {% endfor %}
     </ul>
     <p>Всего: {{ amount }} {{ currency }}</p>
     <p>Скидка: {{ discount }} {{ currency }}</p>
+    <p>{{ tax_rate.name }}: {{ tax }} {{ currency }}</p>
     <p>Итого: {{ total }} {{ currency }}</p>
+    <br>
     <button type="button" id="checkout-button">Buy</button>
     {% csrf_token %}
-</body>
 <!--Здесь переходим на платежную форму при нажатии на кнопку Buy-->
 <script type="text/javascript">
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -58,4 +59,12 @@
                 });
         });
     </script>
+    <br>
+    {% include 'payment/return.html' %}
+    <br>
+    <form action="{% url 'payment:delete' user_cart.user %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Очистить корзину">
+    </form>
+</body>
 </html>

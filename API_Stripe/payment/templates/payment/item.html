@@ -14,13 +14,16 @@
             <h1>{{ item.name }}</h1>
             <p>Цена: {{ item.price }} {{ item.currency }}</p>
             <p>Описание: {{ item.description }}</p>
+
+            <label for="positive-number">Количество:</label>
+            <input type="number" id="positive-number" name="quantity" min="1">
+            <br>
+            <br>
+
             <button type="submit" name="item" value="{{ item.id }}">Добавить в корзину</button>
         </form>
         <br>
-        <form action="{% url 'payment:index' %}" method="post">
-            {% csrf_token %}
-            <input type="submit" value="Вернуться в каталог товаров">
-        </form>
+        {% include 'payment/return.html' %}
     </section>
 </body>
 </html>
