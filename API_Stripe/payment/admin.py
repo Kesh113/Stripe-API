@@ -11,11 +11,11 @@ class AdminItem(admin.ModelAdmin):
 
 @admin.register(Order)
 class AdminOrder(admin.ModelAdmin):
-    fields = ['user', 'discount', 'tax']
-    list_display = ['id', 'user', 'discount', 'tax']
+    fields = ['user', 'discount', 'tax', 'total', 'order_currency']
+    list_display = ['id', 'user', 'discount', 'tax', 'total', 'order_currency']
     list_display_links = ['id', 'user']
     list_per_page = 10
-    list_filter = ['user']
+    list_filter = ['user', 'total', 'order_currency']
     
 @admin.register(Discount)
 class AdminDiscount(admin.ModelAdmin):

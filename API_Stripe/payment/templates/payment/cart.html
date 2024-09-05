@@ -1,12 +1,16 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 
 <head>
     <title> Корзина </title>
     <script src="https://js.stripe.com/v3/"></script>
+    <link type="text/css" href="{% static 'payment/css/styles.css' %}" rel="stylesheet" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body>
     <h1>{{ user_cart }}</h1>
     <ul>
@@ -22,19 +26,43 @@
     </ul>
     <p>Всего: {{ amount }} {{ currency }}</p>
     <p>Скидка: {{ discount }} {{ currency }}</p>
-    <p>{{ tax_rate.name }}: {{ tax }} {{ currency }}</p>
+    <p>Налог: {{ tax }} {{ currency }}</p>
     <p>Итого: {{ total }} {{ currency }}</p>
     <br>
-    <button type="button" id="checkout-button">Buy</button>
+    <!-- <button type="button" id="checkout-button">Buy</button> -->
+    <form id="payment-form">
+        <div id="card-element"></div>
+        <br>
+        <button id="checkout-button">Оплатить</button>
+        <div id="card-errors" role="alert"></div>
+    </form>
     {% csrf_token %}
-<!--Здесь переходим на платежную форму при нажатии на кнопку Buy-->
-<script type="text/javascript">
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+    <!--Передача Stripe платежных данных карты при нажатии на кнопку "Оплатить"-->
+    <script type="text/javascript">
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
         // Передача объекту Stripe публичного ключа
         var stripe = Stripe("{{ publish_key }}");
+        var elements = stripe.elements();
+
+        // Создание элемента карты
+        var cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+
+        // Обработка ошибок ввода
+        cardElement.on('change', function (event) {
+            var errorElement = document.getElementById('card-errors');
+            if (event.error) {
+                errorElement.textContent = event.error.message;
+            } else {
+                errorElement.textContent = '';
+            }
+        });
+
         var checkoutButton = document.getElementById("checkout-button");
-        checkoutButton.addEventListener("click", function () {
+        checkoutButton.addEventListener("click", function (event) {
+            event.preventDefault(); // Предотвращаем стандартное поведение кнопки
+            // отправляем на бэкэнд запрос на получение client_secret
             fetch("{% url 'payment:buy' user_cart.id %}", {
                 method: "POST",
                 headers: {
@@ -44,18 +72,33 @@
                 .then(function (response) {
                     return response.json();
                 })
-                // Редирект на Stripe форму
-                .then(function (session) {
-                    return stripe.redirectToCheckout({ sessionId: session.id }); 
+                // Обработка Payment Intent
+                .then(function (data) {
+                    // Используем client_secret для подтверждения платежа
+                    return stripe.confirmCardPayment(data.client_secret, {
+                        payment_method: {
+                            card: cardElement,
+                        }
+                    });
                 })
+                // Редирект на Stripe session форму
+                // .then(function (session) {
+                //     return stripe.redirectToCheckout({ sessionId: session.id }); 
+                // })
                 .then(function (result) {
-                    // Обработка ошибки если не удается выполнить переадресацию
+                    // Обработка результата платежа
                     if (result.error) {
+                        // Показать ошибку, если платеж не прошел
                         alert(result.error.message);
+                    } else {
+                        // Если платеж успешен происходит очистка корзины и перенаправление пользователя
+                        if (result.paymentIntent.status === 'succeeded') {
+                            window.location.href = "http://{{ request.get_host }}{% url 'payment:success' user_cart.user %}";
+                        }
                     }
                 })
                 .catch(function (error) {
-                    console.error("Ошибка при перенаправлении на страницу оплаты:", error);
+                    console.error("Ошибка при обработке платежа:", error);
                 });
         });
     </script>
@@ -67,4 +110,5 @@
         <input type="submit" value="Очистить корзину">
     </form>
 </body>
+
 </html>

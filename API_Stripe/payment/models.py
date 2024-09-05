@@ -14,7 +14,7 @@ class Item(models.Model):
     price = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        validators=[MinValueValidator(Decimal('0.01'))], 
+        validators=[MinValueValidator(Decimal('0.50'))], 
         verbose_name='Стоимость'
         )
     currency = models.CharField(
@@ -81,6 +81,7 @@ class Tax(models.Model):
         verbose_name='Налог в %'
     )
     
+    
     def __str__(self) -> str:
         return f'{self.name} - {self.tax}%'
     
@@ -107,6 +108,19 @@ class Order(models.Model):
         related_name='order_tax',
         verbose_name='Налог'
     )
+    total = models.DecimalField(
+        default = 0.50,
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.50'))], 
+        verbose_name='Итоговая сумма'
+        )
+    order_currency = models.CharField(
+        max_length=3, 
+        choices=Item.CURRENCIES, 
+        default='rub',
+        verbose_name='Валюта корзины',
+        )
     
     def __str__(self) -> str:
         return f'Корзина пользователя {self.user}'

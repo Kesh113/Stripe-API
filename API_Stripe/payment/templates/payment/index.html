@@ -6,21 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h1>Каталог товаров</h1>
+    {% if not user_name %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="currency">Выбери валюту платежей:</label>
+        <select id="currency" name="currency">
+            {% for code, currency in currencies.items %}
+            <option value="{{ code }}">{{ currency }}</option>
+            {% endfor %}
+        <input type='submit' value='Перейти в каталог'>
+    </form>
+    {% endif %}
+    {% if items %}
+    <h1>Каталог товаров {{ currency }}</h1>
     <ul>
-        {% for i in data %}
+        {% for item in items %}
+        {% if item.currency == currency %}
         <li>
-            <a href="{% url 'payment:item_detail' i.id %}">
-                {{ i.name }}
+            <a href="{% url 'payment:item_detail' item.id %}">
+                {{ item.name }}
             </a>
-            <span> - Цена: {{ i.price }} {{ i.currency }}</span>
+            <span> - Цена: {{ item.price }} {{ item.currency }}</span>
         </li>
         <br>
+        {% endif %}
         {% endfor %}
     </ul>
-    <form action="{% url 'payment:cart' user %}" method="post">
+    <form action="{% url 'payment:cart' user_name %}" method="post">
         {% csrf_token %}
         <input type="submit" value="Корзина товаров ">
     </form>
+    {% endif %}
 </body>
 </html>

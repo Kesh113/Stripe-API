@@ -1,0 +1,92 @@
+[
+    {
+        "model": "payment.item",
+        "pk": 1,
+        "fields": {
+            "name": "Товар-1",
+            "description": "Описание товара 1",
+            "price": "1500.00",
+            "currency": "usd"
+        }
+    },
+    {
+        "model": "payment.item",
+        "pk": 2,
+        "fields": {
+            "name": "Товар-2",
+            "description": "Описание товара 2",
+            "price": "55555.22",
+            "currency": "rub"
+        }
+    },
+    {
+        "model": "payment.item",
+        "pk": 3,
+        "fields": {
+            "name": "Товар-3",
+            "description": "Описание товара 3",
+            "price": "234698.16",
+            "currency": "rub"
+        }
+    },
+    {
+        "model": "payment.item",
+        "pk": 4,
+        "fields": {
+            "name": "Товар-4",
+            "description": "Описание товара 4",
+            "price": "86853.00",
+            "currency": "usd"
+        }
+    },
+    {
+        "model": "payment.item",
+        "pk": 5,
+        "fields": {
+            "name": "Товар-5",
+            "description": "Описание товара 5",
+            "price": "98657.33",
+            "currency": "rub"
+        }
+    },
+    {
+        "model": "payment.item",
+        "pk": 6,
+        "fields": {
+            "name": "Товар-6",
+            "description": "Описание товара 6",
+            "price": "9023.23",
+            "currency": "usd"
+        }
+    },
+    {
+        "model": "payment.discount",
+        "pk": 2,
+        "fields": {
+            "name": "free-period",
+            "duration": "frv",
+            "discount": "5.00"
+        }
+    },
+    {
+        "model": "payment.tax",
+        "pk": 1,
+        "fields": {
+            "name": "НДС",
+            "inclusive": false,
+            "country": "RU",
+            "tax": "13.00"
+        }
+    },
+    {
+        "model": "payment.order",
+        "pk": 1,
+        "fields": {
+            "user": "root@root.com",
+            "discount": 2,
+            "tax": 1,
+            "total": "0.00",
+            "order_currency": "usd"
+        }
+    }
+]

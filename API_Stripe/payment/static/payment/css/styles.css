@@ -1,0 +1,13 @@
+#payment-form {
+    width: 100%; /* Или любое другое значение, чтобы контролировать ширину формы */
+    max-width: 500px; /* Например, ограничение ширины формы */
+    padding: 20px; /* Отступы для формы */
+    background-color: #dbdbdb; /* Цвет фона формы */
+    border-radius: 10px; /* Радиус границы для формы */
+}
+
+#card-element {
+    width: 100%; 
+    padding: 10px; 
+    box-sizing: border-box; 
+}
