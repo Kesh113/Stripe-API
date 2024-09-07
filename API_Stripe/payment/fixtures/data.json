@@ -77,16 +77,5 @@
             "country": "RU",
             "tax": "13.00"
         }
-    },
-    {
-        "model": "payment.order",
-        "pk": 1,
-        "fields": {
-            "user": "root@root.com",
-            "discount": 2,
-            "tax": 1,
-            "total": "0.00",
-            "order_currency": "usd"
-        }
     }
 ]
