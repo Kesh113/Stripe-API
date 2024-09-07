@@ -24,10 +24,10 @@
         <br>
         {% endfor %}
     </ul>
-    <p>Всего: {{ amount }} {{ currency }}</p>
-    <p>Скидка: {{ discount }} {{ currency }}</p>
-    <p>Налог: {{ tax }} {{ currency }}</p>
-    <p>Итого: {{ total }} {{ currency }}</p>
+    <p>Всего: {{ amount }} {{ user_cart.order_currency }}</p>
+    <p>Скидка: {{ discount }} {{ user_cart.order_currency }}</p>
+    <p>Налог: {{ tax }} {{ user_cart.order_currency }}</p>
+    <p>Итого: {{ total }} {{ user_cart.order_currency }}</p>
     <br>
     <!-- <button type="button" id="checkout-button">Buy</button> -->
     <form id="payment-form">
@@ -63,7 +63,7 @@
         checkoutButton.addEventListener("click", function (event) {
             event.preventDefault(); // Предотвращаем стандартное поведение кнопки
             // отправляем на бэкэнд запрос на получение client_secret
-            fetch("{% url 'payment:buy' user_cart.id %}", {
+            fetch("{% url 'payment:buy' %}", {
                 method: "POST",
                 headers: {
                     'X-CSRFToken': csrftoken
@@ -93,7 +93,7 @@
                     } else {
                         // Если платеж успешен происходит очистка корзины и перенаправление пользователя
                         if (result.paymentIntent.status === 'succeeded') {
-                            window.location.href = "http://{{ request.get_host }}{% url 'payment:success' user_cart.user %}";
+                            window.location.href = "http://{{ request.get_host }}{% url 'payment:success' %}";
                         }
                     }
                 })
@@ -105,7 +105,7 @@
     <br>
     {% include 'payment/return.html' %}
     <br>
-    <form action="{% url 'payment:delete' user_cart.user %}" method="post">
+    <form action="{% url 'payment:delete' %}" method="post">
         {% csrf_token %}
         <input type="submit" value="Очистить корзину">
     </form>

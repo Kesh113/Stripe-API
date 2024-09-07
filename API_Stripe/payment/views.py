@@ -1,8 +1,11 @@
 from django.http import JsonResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views import generic
 import stripe
 
 from .models import Item, Order, Discount, OrderItems, Tax
+from .forms import SignUpForm
 
 from API_Stripe.settings import STRIPE_PUBLISHABLE_KEY as publish_key,\
     STRIPE_SECRET_KEY as secret_key, STRIPE_VERSION as version
@@ -12,7 +15,7 @@ stripe.api_key = secret_key
 stripe.api_version = version
 
 
-def has_or_create_coupon(discount: Discount) -> stripe._coupon.Coupon:
+def has_or_create_coupon(discount: Discount) -> stripe._coupon.Coupon | None:
     """Проверка существования купона в Stripe, если не найден - создается"""
     if discount:
         for coupon in stripe.Coupon.list()['data']:
@@ -24,9 +27,10 @@ def has_or_create_coupon(discount: Discount) -> stripe._coupon.Coupon:
                 id=discount.name,
                 percent_off=discount.discount,
             )
-    return coupon
+        return coupon
+    return
             
-def has_or_create_tax(tax_rate: Tax) -> stripe._tax_rate.TaxRate:
+def has_or_create_tax(tax_rate: Tax) -> stripe._tax_rate.TaxRate | None:
     """Проверка существования налога в Stripe, если не найден - создается"""
     if tax_rate:
         for tax in stripe.TaxRate.list()['data']:
@@ -39,7 +43,8 @@ def has_or_create_tax(tax_rate: Tax) -> stripe._tax_rate.TaxRate:
                 inclusive=tax_rate.inclusive,
                 country=tax_rate.country,
             )
-    return tax
+        return tax
+    return
 
 # def create_session(line_items: list[dict], 
 #                    order: Order, 
@@ -93,33 +98,49 @@ def create_payment_intent(order: Order,
         return HttpResponseBadRequest('<h1>При создании Payment Intent были переданы некорректные данные</h1>')
     return payment_intent
 
-
 def index(request):
+    if request.user.is_authenticated:
+            return redirect(to='/currency/')
+    return render(request, 'payment/index.html')
+
+class SignUpView(generic.CreateView):
+    form_class = SignUpForm
+    success_url = reverse_lazy('payment:login')
+    template_name = 'registration/signup.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # перенаправит на домашнюю страницу, если пользователь попытается получить доступ к странице регистрации после авторизации
+        if request.user.is_authenticated:
+            return redirect(to='/currency/')
+
+        return super(SignUpView, self).dispatch(request, *args, **kwargs)
+
+
+def currency(request):
     """Вывод каталога товаров из БД"""
-     # Для всех покупок используется покупатель c id=1
     if request.method == 'POST':
         currency = request.POST.get('currency')
-        order = Order.objects.get(pk=1)
+        order = Order.objects.get(user=request.user)
         if order.item.all() and order.order_currency != currency:
             return HttpResponseBadRequest('<h1>В вашей корзине есть товары другой валюты, пожалуйста выберите валюту корзины</h1>')
         order.order_currency = currency
         order.save()
         return redirect('payment:catalog')
     else:
-        return render(request, 'payment/index.html', {'currencies': Item.CURRENCIES})
+        if request.user.is_authenticated:
+            Order.objects.get_or_create(user=request.user)
+        return render(request, 'payment/catalog.html', {'currencies': Item.CURRENCIES})
 
 
 def catalog(request):
     items = Item.objects.all()
-    order = Order.objects.get(pk=1)
-    return render(request, 'payment/index.html', 
-                  {'items': items, 'user_name': order.user, 'currency': order.order_currency})
+    order = Order.objects.get(user=request.user)
+    return render(request, 'payment/catalog.html', 
+                  {'items': items, 'user': order.user, 'currency': order.order_currency})
 
 
 def get_item(request, item_id: int):
     """Вывод информации о выбранном товаре и добавление его в корзину"""
-    user = Order.objects.get(pk=1).user # Для всех покупок используется покупатель c id=1
-    
     if request.method == 'POST':
         try:
             quantity = int(request.POST.get('quantity')) # получаем кол-во товаров для добавления в корзину
@@ -129,7 +150,7 @@ def get_item(request, item_id: int):
             return HttpResponseBadRequest('Значение должно быть больше 0')
         
         item = Item.objects.get(pk=item_id)
-        order = Order.objects.get(user=user)
+        order = Order.objects.get(user=request.user)
             
         # если товар имеет другую валюту - не попадает в корзину
         if item.currency != order.order_currency: 
@@ -155,10 +176,10 @@ def get_item(request, item_id: int):
         return render(request, 'payment/item.html', {'item': item}) 
 
 
-def buy_item(request, order_id: int):
+def buy_item(request):
     """Отправка запроса Stripe Payment Intent на получение client_secret и его передача на фронтенд"""
     # """Отправка запроса Stripe Session на получение session_id и его передача на фронтенд"""
-    order = Order.objects.get(pk=order_id)
+    order = Order.objects.get(user=request.user)
     
     discount_model = order.discount
     tax_rate_model = order.tax
@@ -188,22 +209,21 @@ def buy_item(request, order_id: int):
     
     # return JsonResponse({'id': checkout_session.id})
 
-def success(request, user_name):
+def success(request):
     """Ответ при успешной оплате и очищение корзины"""
-    order = Order.objects.get(user=user_name)
+    order = Order.objects.get(user=request.user)
     order.total = 0
     order.save()
-    OrderItems.objects.filter(order__user=user_name).delete()
+    OrderItems.objects.filter(order=order).delete()
     return render(request, 'payment/status.html', {'response': 'Оплата произошла успешно'})
 
 def cancel(request):
     """Ответ при неудачной оплате"""
     return render(request, 'payment/status.html', {'response': 'Оплата была отменена'})
 
-def cart(request, user_name: str):
+def cart(request):
     """Корзина пользователя"""
-    order = Order.objects.get(user=user_name)
-    currency = order.order_currency
+    order = Order.objects.get(user=request.user)
     user_items = [(Item.objects.get(pk=order_item.item_id), order_item.quantity) \
         for order_item in order.item.all()]
     amount = 0
@@ -221,7 +241,7 @@ def cart(request, user_name: str):
         if discount:
             discount_total = round(amount * order.discount.discount / 100, 2)
         else:
-            discount = 0
+            discount_total = 0
             
         total = amount - discount_total 
         
@@ -239,7 +259,6 @@ def cart(request, user_name: str):
             'user_cart': order, 
             'user_items': user_items, 
             'amount': amount, 
-            'currency': currency,
             'total': total,
             'tax': tax,
             'discount': discount_total,
@@ -248,10 +267,10 @@ def cart(request, user_name: str):
     else:
         return render(request, 'payment/status.html', {'response': 'Корзина пустая'})
     
-def delete_order(request, user_name: str):
+def delete_order(request: str):
     """Удаление всех итемов из корзины"""
-    order = Order.objects.get(user=user_name)
+    order = Order.objects.get(user=request.user)
     order.total = 0
     order.save()
-    OrderItems.objects.filter(order__user=user_name).delete()
+    OrderItems.objects.filter(order=order).delete()
     return render(request, 'payment/status.html', {'response': 'Корзина очищена'})

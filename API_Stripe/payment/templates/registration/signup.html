@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Регистрация</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h2>Регистрация</h2>
+    {% if form.errors %}
+    <div style="display: table; margin: 0 auto; text-align: left;">
+        {% for key, value in form.errors.items %}
+        <strong>{{ value }}</strong>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <p>Username: {{ form.username }}</p>
+        <p>Email: {{ form.email }}</p>
+        <p>Password: {{ form.password1 }}
+            {{ form.errors.password2 }}</p>
+        <p>Confirm Password: {{ form.password2 }}</p>
+        <input type="submit" value="Зарегистрироваться">
+        <a href="{% url 'payment:login' %}">Аккаунт зарегистрирован? переходи к авторизации</a>
+    </form>
+</body>

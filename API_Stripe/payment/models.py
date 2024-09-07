@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.contrib.auth.models import User
 
 
 class Item(models.Model):  
@@ -91,7 +92,7 @@ class Tax(models.Model):
     
         
 class Order(models.Model):
-    user = models.CharField(max_length=100, unique=True, verbose_name='Покупатель', help_text='E-mail')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='Покупатель')
     discount = models.ForeignKey(
         Discount,
         blank=True,
@@ -142,3 +143,4 @@ class OrderItems(models.Model):
         unique_together = ('order', 'item')
         verbose_name = 'Товар корзины'
         verbose_name_plural = 'Товары корзины'
+        
